@@ -1,0 +1,2 @@
+ Notifyme SDK Webservice - ${application.title} ${application.formatted-version} running on [${spring.profiles.active}]
+   :: Spring Boot ${spring-boot.formatted-version}

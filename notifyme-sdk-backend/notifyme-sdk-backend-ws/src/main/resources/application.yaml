@@ -1,0 +1,123 @@
+#
+# Copyright (c) 2020 Ubique Innovation AG <https://www.ubique.ch>
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+
+spring:
+  profiles.active: ${SPRING_PROFILES_ACTIVE:radarcovid-local,jwt}
+  application.name: notifyme
+
+  sleuth:
+    log.slf4j:
+      enabled: true
+    keys.http.headers: X-Amz-Cf-Id
+    baggage:
+      remote-fields: X-Amz-Cf-Id
+      correlation-fields: X-Amz-Cf-Id
+
+cloud:
+  aws:
+    credentials:
+      access-key: ${AWS_ACCESS_KEY_ID:}
+      secret-key: ${AWS_SECRET_KEY:}
+    region:
+      auto: ${CLOUD.AWS.REGION.AUTO:false}
+      static: ${CLOUD.AWS.REGION.STATIC:eu-west-1}
+    stack:
+      auto: ${CLOUD.AWS.STACK.AUTO:false}
+
+management:
+  endpoint.health.probes.enabled: true
+  endpoints.enabled-by-default: false
+  metrics:
+    enable:
+      all: true
+    export:
+      cloudwatch:
+        namespace: notifyme
+        batch-size: 20
+
+server:
+  error.whitelabel.enabled: true
+  compression:
+    enabled: true
+    mime-types:
+      - application/json
+      - application/xml
+      - text/plain
+      - text/xml
+  http2:
+    enabled: true
+  port: ${SERVER_PORT:8080}
+  tomcat:
+    mbeanregistry:
+      enabled: true
+  shutdown: graceful
+
+logging:
+  level:
+    root: info
+    org.springframework: warn
+    org.flywaydb: warn
+    com.amazonaws: error
+    ch.ubique.notifyme.sdk.backend.ws.radarcovid: debug
+    ch.ubique.notifyme.sdk.backend.ws.radarcovid.config: info
+    ch.ubique.notifyme: info
+    com.zaxxer.hikari.pool.HikariPool: debug
+    com.zaxxer.hikari.HikariConfig: debug
+    com.zaxxer.hikari: debug
+  pattern:
+    console: '[%-5level] [%X{X-B3-TraceId:-},%X{X-Amz-Cf-Id:-}] - %c{1} - %msg%n'
+
+#-------------------------------------------------------------------------------
+# JDBC Config
+#-------------------------------------------------------------------------------
+
+datasource:
+  url: ${DATASOURCE_URL:jdbc:postgresql://localhost:5432/RADARCOVID}
+  username: ${DATASOURCE_USER:radarcovid}
+  password: ${DATASOURCE_PASS:radarcovid}
+  schema: ${DATASOURCE_SCHEMA:notifyme}
+  driverClassName: org.postgresql.ds.PGSimpleDataSource
+  failFast: ${DATASOURCE_FAIL_FAST:true}
+  minimumIdle: ${DATASOURCE_MIN_IDLE:5}
+  maximumPoolSize: ${DATASOURCE_MAX_POOL_SIZE:15}
+  maxLifetime: ${DATASOURCE_MAX_LIFE_TIME:1700000}
+  idleTimeout: ${DATASOURCE_IDLE_TIMEOUT:600000}
+  connectionTimeout: ${DATASOURCE_CONNECTION_TIMEOUT:30000}
+  flyway.load: ${DATASOURCE_FLYWAY_LOAD:true}
+
+db:
+  cleanCron: ${DB_CLEAN_CRON:0 0 3 * * ?}
+  removeAfterDays: ${DB_REMOVE_AFTER_DAYS:14}
+  
+# keys for local testing only
+healthAuthority:
+  skHex: ${HEALTH_AUTHORITY_SK_HEX:36b3b80a1cd2cc98d84b4ed2c109b74e7026f00c0d40a0b12a936b1814aa5e39}
+  pkHex: ${HEALTH_AUTHORITY_PK_HEX:e4d2e06641730ce7c9986b1e7e91bf41bb3b8cc1d76d249fa99d0d8925e87a5c}
+
+traceKey:
+  bucketSizeInMs: ${TRACE_KEY_BUCKET_SIZE:60000}
+  traceKeysCacheControlInMs: ${TRACE_KEY_CACHE_CONTROL:300000}
+
+ws:
+  app:
+    jwt:
+      publickey: ${WS_APP_JWT_PUBLICKEY:LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJJakFOQmdrcWhraUc5dzBCQVFFRkFBT0NBUThBTUlJQkNnS0NBUUVBaXk1YkcwMG8waUJBb2lYRTNkVlUKYkZsMnNwcFp6N0J6byt6dWtZQkhOSFZuUUhjbXY0QndFTjJVd2NoNVNlV0hIZjhtREpudjFKbzJjdk9hSkcwUwpwMC9tUmw0V1ZOSzFtQ0lZZkdVcGlBZVdGK2t5cFZaeGhrMHN1N09qNXA4dTN3Ulp2bTg1OUJvblVCMnN0ckxjCmQzTjA4QWZUVmtvMG4wcWJ5Zk42S3lRZElxNlJ3VndSNUpNWWlIT245SUhsK3Mrd1hjempxVVRvY2RiR3RXWWgKbVQyZFh5T2Mzd0hFYTF0bG42a1FuRkpOY3pYdVdSM2ZaV3RSL0dMUFFsSFMzKzE1bVYxSnVuakQ4MklISnhJdQpLSDBPbmdBdG55L0trT1BNcXhlaElMSlVTMjdUdWhzOWdXNnhTWTBsZVJKOG9OSEJBeHJDVzBwSmx5STRqNW1VCm9RSURBUUFCCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K}
+      maxValidityMinutes: ${WS_APP_JWT_MAX_VALIDITY_MINUTES:60}
+      algorithm: ${WS_APP_JWT_ALGORITHM:RSA}
+
+application:
+  case-code:
+    jwt:
+      publickey: ${CASE_CODE_JWT_PUBLICKEY:LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlHYk1CQUdCeXFHU000OUFnRUdCU3VCQkFBakE0R0dBQVFCYndNcHNzcFRPRHhJSVYvU3VsbGdTNFRUWTNBVgpmNjYrYUgyVkNXWmFDM2k1b2dmcW8yT1JJQ1FoZkc2MHdWRHp1U2pCQklaaTYxbVZ3QXk1cXJUS0hib0F4QzFpCnJibk1YOG9rUSthamZHRy80UE1yOWpoVHFKamkzY3ZDeU4xQWY2RWY3Z0p6WEtSYVhmdWFyTFRNVWZvV2NXMkkKWXBFOXROSXMzSExmUGczSHJpRT0KLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg==}
+      maxValidityMinutes: ${CASE_CODE_JWT_MAX_VALIDITY_MINUTES:360}
+      algorithm: ${CASE_CODE_JWT_ALGORITHM:EC}
+    max-length: ${CASE_CODE_MAX_LENGTH:12}  
+  log:
+    enabled: ${LOGGABLE_ENABLED:false}
